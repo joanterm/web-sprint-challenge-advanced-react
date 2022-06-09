@@ -1,54 +1,132 @@
 import React from 'react'
-
-// Suggested initial states
-const initialMessage = ''
-const initialEmail = ''
-const initialSteps = 0
-const initialIndex = 4 // the index the "B" is at
-
-const initialState = {
-  message: initialMessage,
-  email: initialEmail,
-  index: initialIndex,
-  steps: initialSteps,
-}
-
+import axios from "axios"
 export default class AppClass extends React.Component {
-  // THE FOLLOWING HELPERS ARE JUST RECOMMENDATIONS.
-  // You can delete them and build your own logic from scratch.
-
-  getXY = () => {
-    // It it not necessary to have a state to track the coordinates.
-    // It's enough to know what index the "B" is at, to be able to calculate them.
+  constructor() {
+    super()
+    this.state = {
+      coordinateX: 2,
+      coordinateY: 2,
+      totalMoves: 0,
+      message: "",
+      email: ""
+    }    
   }
 
-  getXYMessage = () => {
-    // It it not necessary to have a state to track the "Coordinates (2, 2)" message for the user.
-    // You can use the `getXY` helper above to obtain the coordinates, and then `getXYMessage`
-    // returns the fully constructed string.
+  // BUTTON LEFT
+  clickButtonLeft = () => {      
+    this.setState({
+      ...this.state,
+      coordinateX: this.state.coordinateX - 1,
+      totalMoves: this.state.totalMoves + 1,
+      message: ""
+    })  
+    if(this.state.coordinateX - 1 < 1) {
+      this.setState({
+        ...this.state,
+        message: "You can't go left",
+      })
+    }
   }
 
-  reset = () => {
-    // Use this helper to reset all states to their initial values.
+  // BUTTON RIGHT
+  clickButtonRight = () => {
+    this.setState({
+      ...this.state,
+      coordinateX: this.state.coordinateX + 1,
+      totalMoves: this.state.totalMoves + 1,
+      message: ""
+    })  
+    if(this.state.coordinateX + 1 > 3) {
+      this.setState({
+        ...this.state,
+        message: "You can't go right",
+      })
+    }
   }
 
-  getNextIndex = (direction) => {
-    // This helper takes a direction ("left", "up", etc) and calculates what the next index
-    // of the "B" would be. If the move is impossible because we are at the edge of the grid,
-    // this helper should return the current index unchanged.
+  // BUTTON UP
+  clickButtonUp = () => {
+    this.setState({
+      ...this.state,
+      coordinateY: this.state.coordinateY - 1,
+      totalMoves: this.state.totalMoves + 1,
+      message: ""
+    })
+    if(this.state.coordinateY - 1 < 1) {
+      this.setState({
+        ...this.state,
+        message: "You can't go up",
+      })
+    }
   }
 
-  move = (evt) => {
-    // This event handler can use the helper above to obtain a new index for the "B",
-    // and change any states accordingly.
+  // BUTTON DOWN
+  clickButtonDown = () => {
+    this.setState({
+      ...this.state,
+      coordinateY: this.state.coordinateY + 1,
+      totalMoves: this.state.totalMoves + 1,
+      message: ""
+    })
+    if(this.state.coordinateY + 1 > 3) {
+      this.setState({
+        ...this.state,
+        message: "You can't go down",
+      })
+    }
   }
 
-  onChange = (evt) => {
-    // You will need this to update the value of the input.
+  // RESET BUTTON
+  resetButton = () => {
+    this.setState({
+      ...this.state,
+      coordinateX: 2,
+      coordinateY: 2,
+      totalMoves: 0,
+      message: "",
+      email: ""
+    })
   }
 
-  onSubmit = (evt) => {
-    // Use a POST request to send a payload to the server.
+  // HANDLE INPUT CHANGE
+  handleChange = (e) => {
+    const {value} = e.target
+    this.setState({
+      ...this.state,
+      email: value,
+    })  
+  }
+
+  // SUBMIT FORM AND POST REQUEST
+  handleSubmit = (e) => {
+    e.preventDefault()
+    if(this.state.email === "") {
+      this.setState({
+        ...this.state,
+        message: "Ouch: email is required"
+      })     
+    }    
+    const sendInfo = {
+      "x": this.state.coordinateX,
+      "y": this.state.coordinateY,
+      "steps": this.state.totalMoves,
+      "email": this.state.email
+    }
+    axios.post("http://localhost:9000/api/result", sendInfo)
+    .then((response) => {
+      console.log(response);     
+      this.setState({
+        ...this.state,
+        message: response.data.message,
+        email: ""
+      })
+    })
+    .catch((error) => {
+      this.setState({
+        ...this.state,
+        message: error.response.data.message
+      })    
+    })
   }
 
   render() {
@@ -56,30 +134,39 @@ export default class AppClass extends React.Component {
     return (
       <div id="wrapper" className={className}>
         <div className="info">
-          <h3 id="coordinates">Coordinates (2, 2)</h3>
-          <h3 id="steps">You moved 0 times</h3>
+          <h3 id="coordinates">{`Coordinates (${this.state.coordinateX}, ${this.state.coordinateY})`}</h3>
+          <h3 id="steps">{this.state.totalMoves === 1 ? `You moved ${this.state.totalMoves} time` : `You moved ${this.state.totalMoves} times`}</h3>
         </div>
         <div id="grid">
-          {
-            [0, 1, 2, 3, 4, 5, 6, 7, 8].map(idx => (
-              <div key={idx} className={`square${idx === 4 ? ' active' : ''}`}>
-                {idx === 4 ? 'B' : null}
-              </div>
-            ))
-          }
+          <div className={`${this.state.coordinateX === 1 && this.state.coordinateY === 1 ? "square active": "square"}`}>{this.state.coordinateX === 1 && this.state.coordinateY === 1 ? "B": ""}</div>
+          <div className={`${this.state.coordinateX === 2 && this.state.coordinateY === 1 ? "square active": "square"}`}>{this.state.coordinateX === 2 && this.state.coordinateY === 1 ? "B": ""}</div>
+          <div className={`${this.state.coordinateX === 3 && this.state.coordinateY === 1 ? "square active": "square"}`}>{this.state.coordinateX === 3 && this.state.coordinateY === 1 ? "B": ""}</div>
+          <div className={`${this.state.coordinateX === 1 && this.state.coordinateY === 2 ? "square active": "square"}`}>{this.state.coordinateX === 1 && this.state.coordinateY === 2 ? "B": ""}</div>
+          <div className={`${this.state.coordinateX === 2 && this.state.coordinateY === 2 ? "square active": "square"}`}>{this.state.coordinateX === 2 && this.state.coordinateY === 2 ? "B": ""}</div>
+          <div className={`${this.state.coordinateX === 3 && this.state.coordinateY === 2 ? "square active": "square"}`}>{this.state.coordinateX === 3 && this.state.coordinateY === 2 ? "B": ""}</div>
+          <div className={`${this.state.coordinateX === 1 && this.state.coordinateY === 3 ? "square active": "square"}`}>{this.state.coordinateX === 1 && this.state.coordinateY === 3 ? "B": ""}</div>
+          <div className={`${this.state.coordinateX === 2 && this.state.coordinateY === 3 ? "square active": "square"}`}>{this.state.coordinateX === 2 && this.state.coordinateY === 3 ? "B": ""}</div>
+          <div className={`${this.state.coordinateX === 3 && this.state.coordinateY === 3 ? "square active": "square"}`}>{this.state.coordinateX === 3 && this.state.coordinateY === 3 ? "B": ""}</div>
         </div>
         <div className="info">
-          <h3 id="message"></h3>
+          <h3 id="message">{this.state.message}</h3>
         </div>
         <div id="keypad">
-          <button id="left">LEFT</button>
-          <button id="up">UP</button>
-          <button id="right">RIGHT</button>
-          <button id="down">DOWN</button>
-          <button id="reset">reset</button>
+          <button id="left" onClick={this.clickButtonLeft}>LEFT</button>
+          <button id="up"onClick={this.clickButtonUp}>UP</button>
+          <button id="right" onClick={this.clickButtonRight}>RIGHT</button>
+          <button id="down" onClick={this.clickButtonDown}>DOWN</button>
+          <button id="reset" onClick={this.resetButton}>reset</button>
         </div>
-        <form>
-          <input id="email" type="email" placeholder="type email"></input>
+        <form onSubmit={this.handleSubmit}>
+          <input 
+            id="email" 
+            type="email" 
+            placeholder="type email"
+            name="email"
+            value={this.state.email}
+            onChange={this.handleChange}
+          ></input>
           <input id="submit" type="submit"></input>
         </form>
       </div>
